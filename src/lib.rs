@@ -267,6 +267,8 @@ struct State {
     num_indices: u32,
     diffuse_bind_group: wgpu::BindGroup,
     diffuse_texture: texture::Texture,
+    arch_bind_group: wgpu::BindGroup,
+    texture0: bool,
     camera: Camera,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
@@ -274,6 +276,7 @@ struct State {
     camera_controller: CameraController,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
+    rotate: bool,
 }
 
 impl State {
@@ -317,6 +320,10 @@ impl State {
         let diffuse_texture =
             texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
 
+        let arch_bytes = include_bytes!("../assets/arch-logo.jpg");
+        let arch_texture =
+            texture::Texture::from_bytes(&device, &queue, arch_bytes, "arch-logo.jpg").unwrap();
+
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -350,6 +357,21 @@ impl State {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        let arch_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&arch_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&arch_texture.sampler),
                 },
             ],
             label: Some("diffuse_bind_group"),
@@ -505,6 +527,8 @@ impl State {
             num_indices,
             diffuse_bind_group,
             diffuse_texture,
+            arch_bind_group,
+            texture0: true,
             camera,
             camera_uniform,
             camera_buffer,
@@ -512,6 +536,7 @@ impl State {
             camera_controller,
             instances,
             instance_buffer,
+            rotate: true,
         }
     }
 
@@ -535,6 +560,27 @@ impl State {
                 };
                 true
             }
+            WindowEvent::KeyboardInput { input, .. } => {
+                match input {
+                    KeyboardInput {
+                        virtual_keycode: Some(VirtualKeyCode::Space),
+                        state: ElementState::Pressed,
+                        ..
+                    } => {
+                            self.texture0 = !self.texture0;
+                            true
+                        }
+                    KeyboardInput {
+                        virtual_keycode: Some(VirtualKeyCode::P),
+                        state: ElementState::Pressed,
+                        ..
+                    } => {
+                            self.rotate = !self.rotate;
+                            true
+                        }
+                    _ => self.camera_controller.process_events(event),
+                }
+            }
             _ => self.camera_controller.process_events(event),
         }
     }
@@ -549,7 +595,10 @@ impl State {
         );
 
         for instance in &mut self.instances {
-            let amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(ROTATION_SPEED));
+            let mut amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(0.0));
+            if self.rotate {
+                amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(ROTATION_SPEED));
+            }
             let current = instance.rotation;
             instance.rotation = amount * current;
         }
@@ -594,7 +643,11 @@ impl State {
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+        if self.texture0 {
+            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+        } else {
+            render_pass.set_bind_group(0, &self.arch_bind_group, &[]);
+        }
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
