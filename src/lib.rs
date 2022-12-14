@@ -199,7 +199,7 @@ const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(
     NUM_INSTANCES_PER_ROW as f32 * 0.5,
 );
 
-const ROTATION_SPEED: f32 = 1.0 * std::f32::consts::PI / 60.0;
+const ROTATION_SPEED: f32 = 1.0 * std::f32::consts::PI / 180.0;
 
 struct Instance {
     position: cgmath::Vector3<f32>,
@@ -268,6 +268,7 @@ struct State {
     diffuse_bind_group: wgpu::BindGroup,
     diffuse_texture: texture::Texture,
     arch_bind_group: wgpu::BindGroup,
+    depth_texture: texture::Texture,
     texture0: bool,
     camera: Camera,
     camera_uniform: CameraUniform,
@@ -374,8 +375,10 @@ impl State {
                     resource: wgpu::BindingResource::Sampler(&arch_texture.sampler),
                 },
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("arch_bind_group"),
         });
+
+        let depth_texture = texture::Texture::create_depth_texture(&device, &config, "depth_texture");
 
         let clear_color = wgpu::Color::WHITE;
 
@@ -414,7 +417,7 @@ impl State {
             });
 
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &&camera_bind_group_layout,
+            layout: &camera_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: camera_buffer.as_entire_binding(),
@@ -453,7 +456,13 @@ impl State {
                 polygon_mode: wgpu::PolygonMode::Fill,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: texture::Texture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -528,7 +537,8 @@ impl State {
             diffuse_bind_group,
             diffuse_texture,
             arch_bind_group,
-            texture0: true,
+            depth_texture,
+            texture0: false,
             camera,
             camera_uniform,
             camera_buffer,
@@ -545,6 +555,7 @@ impl State {
             self.size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
+            self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
             self.surface.configure(&self.device, &self.config);
         }
     }
@@ -639,14 +650,20 @@ impl State {
                     store: true,
                 },
             })],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_texture.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
-        if self.texture0 {
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-        } else {
-            render_pass.set_bind_group(0, &self.arch_bind_group, &[]);
+        match self.texture0 {
+            false => render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]),
+            true => render_pass.set_bind_group(0, &self.arch_bind_group, &[]),
         }
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
