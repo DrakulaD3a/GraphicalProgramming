@@ -164,7 +164,8 @@ struct Instance {
 
 impl Instance {
     fn to_raw(&self) -> InstanceRaw {
-        let model = cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation);
+        let model =
+            cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation);
         InstanceRaw {
             model: model.into(),
             normal: cgmath::Matrix3::from(self.rotation).into(),
@@ -226,7 +227,14 @@ impl model::Vertex for InstanceRaw {
     }
 }
 
-fn create_render_pipeline(device: &wgpu::Device, layout: &wgpu::PipelineLayout, color_format: wgpu::TextureFormat, depth_format: Option<wgpu::TextureFormat>, vertex_layouts: &[wgpu::VertexBufferLayout], shader: wgpu::ShaderModuleDescriptor) -> wgpu::RenderPipeline {
+fn create_render_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    color_format: wgpu::TextureFormat,
+    depth_format: Option<wgpu::TextureFormat>,
+    vertex_layouts: &[wgpu::VertexBufferLayout],
+    shader: wgpu::ShaderModuleDescriptor,
+) -> wgpu::RenderPipeline {
     let shader = device.create_shader_module(shader);
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -461,7 +469,14 @@ impl State {
                 label: Some("Normal Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             };
-            create_render_pipeline(&device, &render_pipeline_layout, config.format, Some(texture::Texture::DEPTH_FORMAT), &[model::ModelVertex::desc(), InstanceRaw::desc()], shader)
+            create_render_pipeline(
+                &device,
+                &render_pipeline_layout,
+                config.format,
+                Some(texture::Texture::DEPTH_FORMAT),
+                &[model::ModelVertex::desc(), InstanceRaw::desc()],
+                shader,
+            )
         };
 
         let light_render_pipeline = {
@@ -475,7 +490,14 @@ impl State {
                 label: Some("Light Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("light.wgsl").into()),
             };
-            create_render_pipeline(&device, &layout, config.format, Some(texture::Texture::DEPTH_FORMAT), &[model::ModelVertex::desc()], shader)
+            create_render_pipeline(
+                &device,
+                &layout,
+                config.format,
+                Some(texture::Texture::DEPTH_FORMAT),
+                &[model::ModelVertex::desc()],
+                shader,
+            )
         };
 
         const SPACE_BETWEEN: f32 = 3.0;
@@ -654,10 +676,19 @@ impl State {
 
         use crate::model::DrawLight;
         render_pass.set_pipeline(&self.light_render_pipeline);
-        render_pass.draw_light_model(&self.obj_model, &self.camera_bind_group, &self.light_bind_group);
+        render_pass.draw_light_model(
+            &self.obj_model,
+            &self.camera_bind_group,
+            &self.light_bind_group,
+        );
 
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.draw_model_instanced(&self.obj_model, 0..self.instances.len() as u32, &self.camera_bind_group, &self.light_bind_group);
+        render_pass.draw_model_instanced(
+            &self.obj_model,
+            0..self.instances.len() as u32,
+            &self.camera_bind_group,
+            &self.light_bind_group,
+        );
 
         drop(render_pass);
 
