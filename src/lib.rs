@@ -3,8 +3,9 @@ use winit::window::Window;
 
 mod model;
 mod texture;
-use model::Vertex;
 mod resources;
+
+use model::Vertex;
 
 use winit::{
     event::*,
@@ -286,6 +287,7 @@ struct State {
     light_buffer: wgpu::Buffer,
     light_bind_group_layout: wgpu::BindGroupLayout,
     light_bind_group: wgpu::BindGroup,
+    light_render_pipeline: wgpu::RenderPipeline,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     rotate: bool,
@@ -447,12 +449,22 @@ impl State {
                 source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             };
 
+            create_render_pipeline(&device, &render_pipeline_layout, config.format, Some(texture::Texture::DEPTH_FORMAT), &[model::ModelVertex::desc(), InstanceRaw::desc()], shader)
+        };
+
+        let light_render_pipeline = {
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Ligh Pipeline Layout"),
+                bind_group_layouts: &[&camera_bind_group_layout, &light_bind_group_layout],
+                push_constant_ranges: &[],
+            });
+
             let shader = wgpu::ShaderModuleDescriptor {
                 label: Some("Light Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("light.wgsl").into()),
             };
 
-            create_render_pipeline(&device, &render_pipeline_layout, config.format, Some(texture::Texture::DEPTH_FORMAT), &[model::ModelVertex::desc(), InstanceRaw::desc()], shader)
+            create_render_pipeline(&device, &layout, config.format, Some(texture::Texture::DEPTH_FORMAT), &[model::ModelVertex::desc()], shader)
         };
 
         let instances = (0..NUM_INSTANCES_PER_ROW)
@@ -531,6 +543,7 @@ impl State {
             light_buffer,
             light_bind_group_layout,
             light_bind_group,
+            light_render_pipeline,
             instances,
             instance_buffer,
             rotate: true,
@@ -645,12 +658,17 @@ impl State {
         });
 
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+        render_pass.set_pipeline(&self.light_render_pipeline);
+        render_pass.draw_light_model(&self.obj_model, &self.camera_bind_group, &self.light_bind_group);
         render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.draw_model_instanced(&self.obj_model, 0..self.instances.len() as u32, &self.camera_bind_group, &self.light_bind_group);
 
-        let mesh = &self.obj_model.meshes[0];
-        let material = &self.obj_model.materials[mesh.material];
-        use model::DrawModel;
-        render_pass.draw_mesh_instanced(mesh, material, 0..self.instances.len() as u32, &self.camera_bind_group, &self.light_bind_group);
+        use crate::model::DrawLight;
+        render_pass.draw_light_model(&self.obj_model, &self.camera_bind_group, &self.light_bind_group);
+
+        render_pass.set_pipeline(&self.render_pipeline);
+        use crate::model::DrawModel;
+        render_pass.draw_model_instanced(&self.obj_model, 0..self.instances.len() as u32, &self.camera_bind_group, &self.light_bind_group);
 
         drop(render_pass);
 
