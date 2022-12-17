@@ -12,8 +12,6 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.5, 1.0,
 );
 
-const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
-
 #[derive(Debug)]
 pub struct Camera {
     pub position: Point3<f32>,
@@ -174,10 +172,10 @@ impl CameraController {
         self.rotate_horizontal = 0.0;
         self.rotate_vertical = 0.0;
 
-        if camera.pitch < -Rad(SAFE_FRAC_PI_2) {
-            camera.pitch = -Rad(SAFE_FRAC_PI_2);
-        } else if camera.pitch > Rad(SAFE_FRAC_PI_2) {
-            camera.pitch = Rad(SAFE_FRAC_PI_2);
+        if camera.pitch < -Rad(FRAC_PI_2) {
+            camera.pitch = -Rad(FRAC_PI_2);
+        } else if camera.pitch > Rad(FRAC_PI_2) {
+            camera.pitch = Rad(FRAC_PI_2);
         }
     }
 }
