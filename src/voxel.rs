@@ -27,7 +27,7 @@ impl Vertex {
     }
 }
 
-const SIZE: f32 = 16.0;
+const HALF_SIZE: f32 = 4.0;
 
 pub struct Voxel {
     pub corners: [Vertex; 8],
@@ -38,28 +38,28 @@ impl Voxel {
         Self {
             corners: [
                 Vertex {
-                    position: [pos.x, pos.y, pos.z],
+                    position: [pos.x - HALF_SIZE, pos.y - HALF_SIZE, pos.z - HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x + SIZE, pos.y, pos.z],
+                    position: [pos.x + HALF_SIZE, pos.y - HALF_SIZE, pos.z - HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x + SIZE, pos.y + SIZE, pos.z],
+                    position: [pos.x + HALF_SIZE, pos.y + HALF_SIZE, pos.z - HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x, pos.y + SIZE, pos.z],
+                    position: [pos.x - HALF_SIZE, pos.y + HALF_SIZE, pos.z - HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x, pos.y, pos.z + SIZE],
+                    position: [pos.x - HALF_SIZE, pos.y - HALF_SIZE, pos.z + HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x + SIZE, pos.y, pos.z + SIZE],
+                    position: [pos.x + HALF_SIZE, pos.y - HALF_SIZE, pos.z + HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x + SIZE, pos.y + SIZE, pos.z + SIZE],
+                    position: [pos.x + HALF_SIZE, pos.y + HALF_SIZE, pos.z + HALF_SIZE],
                 },
                 Vertex {
-                    position: [pos.x, pos.y + SIZE, pos.z + SIZE],
+                    position: [pos.x - HALF_SIZE, pos.y + HALF_SIZE, pos.z + HALF_SIZE],
                 },
             ],
         }
