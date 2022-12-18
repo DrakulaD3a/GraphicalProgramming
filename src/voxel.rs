@@ -27,8 +27,9 @@ impl Vertex {
     }
 }
 
-const HALF_SIZE: f32 = 4.0;
+const HALF_SIZE: f32 = 0.5;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Voxel {
     pub corners: [Vertex; 8],
 }
