@@ -4,6 +4,7 @@ use cgmath::Vector3;
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub position: [f32; 3],
+    pub color: [f32; 3],
 }
 
 impl Vertex {
@@ -40,27 +41,35 @@ impl Voxel {
             corners: [
                 Vertex {
                     position: [pos.x - HALF_SIZE, pos.y - HALF_SIZE, pos.z - HALF_SIZE],
+                    color: [0.3, 0.2, 0.1],
                 },
                 Vertex {
                     position: [pos.x + HALF_SIZE, pos.y - HALF_SIZE, pos.z - HALF_SIZE],
+                    color: [0.4, 0.5, 0.6],
                 },
                 Vertex {
                     position: [pos.x + HALF_SIZE, pos.y + HALF_SIZE, pos.z - HALF_SIZE],
+                    color: [0.7, 0.7, 0.7],
                 },
                 Vertex {
                     position: [pos.x - HALF_SIZE, pos.y + HALF_SIZE, pos.z - HALF_SIZE],
+                    color: [0.4, 0.4, 0.4],
                 },
                 Vertex {
                     position: [pos.x - HALF_SIZE, pos.y - HALF_SIZE, pos.z + HALF_SIZE],
+                    color: [0.1, 0.3, 0.9],
                 },
                 Vertex {
                     position: [pos.x + HALF_SIZE, pos.y - HALF_SIZE, pos.z + HALF_SIZE],
+                    color: [0.8, 0.4, 0.5],
                 },
                 Vertex {
                     position: [pos.x + HALF_SIZE, pos.y + HALF_SIZE, pos.z + HALF_SIZE],
+                    color: [0.3, 0.9, 0.3],
                 },
                 Vertex {
                     position: [pos.x - HALF_SIZE, pos.y + HALF_SIZE, pos.z + HALF_SIZE],
+                    color: [0.3, 0.7, 0.1],
                 },
             ],
         }
