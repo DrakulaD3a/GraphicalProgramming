@@ -19,6 +19,7 @@ tobj = { version = "3.2.3", features = [
 	"async",
 ]}
 rand = "0.8.5"
+noise = "0.8.2"
 
 [build-dependencies]
 anyhow = "1.0"

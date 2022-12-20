@@ -1,5 +1,5 @@
-use std::mem;
 use rand::Rng;
+use std::mem;
 
 use cgmath::Rotation3;
 use wgpu::util::DeviceExt;
@@ -9,8 +9,9 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-mod texture;
 mod camera;
+mod chunk;
+mod texture;
 mod voxel;
 
 struct Instance {
@@ -20,7 +21,12 @@ struct Instance {
 impl Instance {
     fn to_raw(&self) -> InstanceRaw {
         InstanceRaw {
-            model: (cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0)))).into(),
+            model: (cgmath::Matrix4::from_translation(self.position)
+                * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
+                    cgmath::Vector3::unit_z(),
+                    cgmath::Deg(0.0),
+                )))
+            .into(),
         }
     }
 }
@@ -130,7 +136,8 @@ impl State {
         surface.configure(&device, &config);
 
         let camera = camera::Camera::new((0.0, 5.0, 10.0), cgmath::Deg(-90.0), cgmath::Deg(-20.0));
-        let projection = camera::Projection::new(config.width, config.height, cgmath::Deg(45.0), 0.1, 100.0);
+        let projection =
+            camera::Projection::new(config.width, config.height, cgmath::Deg(45.0), 0.1, 100.0);
         let camera_controller = camera::CameraController::new(4.0, 0.4);
 
         let mut camera_uniform = camera::CameraUniform::new();
@@ -166,7 +173,8 @@ impl State {
             label: Some("Camera Bind Group"),
         });
 
-        let depth_texture = texture::Texture::create_depth_texture(&device, &config, "Depth Texture");
+        let depth_texture =
+            texture::Texture::create_depth_texture(&device, &config, "Depth Texture");
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
@@ -221,22 +229,30 @@ impl State {
             multiview: None,
         });
 
-        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
-            (0..NUM_INSTANCES_PER_ROW).flat_map(move |y| {
-            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                let position;
-                if rand::thread_rng().gen_bool(0.5) {
-                    position = cgmath::Vector3 { x: x as f32, y: y as f32, z: z as f32 };
-                } else {
-                    position = cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 };
-                }
+        let instances = (0..NUM_INSTANCES_PER_ROW)
+            .flat_map(|z| {
+                (0..NUM_INSTANCES_PER_ROW).flat_map(move |y| {
+                    (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+                        let position;
+                        if rand::thread_rng().gen_bool(0.5) {
+                            position = cgmath::Vector3 {
+                                x: x as f32,
+                                y: y as f32,
+                                z: z as f32,
+                            };
+                        } else {
+                            position = cgmath::Vector3 {
+                                x: 0.0,
+                                y: 0.0,
+                                z: 0.0,
+                            };
+                        }
 
-                Instance {
-                    position,
-                }
+                        Instance { position }
+                    })
+                })
             })
-            })
-        }).collect::<Vec<_>>();
+            .collect::<Vec<_>>();
 
         let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -245,25 +261,22 @@ impl State {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let voxel = voxel::Voxel::new(cgmath::Vector3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        });
+        let mut chunk = chunk::Chunk::new();
+        chunk.build_voxels(&cgmath::Vector3::new(10.0, 10.0, 10.0));
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&voxel.corners),
+            contents: bytemuck::cast_slice(&chunk.vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&voxel.get_index_buffer()),
+            contents: bytemuck::cast_slice(&chunk.indices),
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let num_indices = voxel.get_index_buffer().len() as u32;
+        let num_indices = chunk.indices.len() as u32;
 
         Self {
             surface,
@@ -301,22 +314,31 @@ impl State {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
-            self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.config, "Depth Texture");
+            self.depth_texture =
+                texture::Texture::create_depth_texture(&self.device, &self.config, "Depth Texture");
         }
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
-            WindowEvent::KeyboardInput { input: KeyboardInput {
-                virtual_keycode: Some(key),
-                state,
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        virtual_keycode: Some(key),
+                        state,
+                        ..
+                    },
                 ..
-            }, .. } => self.camera_controller.process_keyboard(*key, *state),
+            } => self.camera_controller.process_keyboard(*key, *state),
             WindowEvent::MouseWheel { delta, .. } => {
                 self.camera_controller.process_scroll(delta);
                 true
             }
-            WindowEvent::MouseInput { state, button: MouseButton::Left, .. } => {
+            WindowEvent::MouseInput {
+                state,
+                button: MouseButton::Left,
+                ..
+            } => {
                 self.mouse_pressed = *state == ElementState::Pressed;
                 true
             }
@@ -326,8 +348,13 @@ impl State {
 
     fn update(&mut self, dt: std::time::Duration) {
         self.camera_controller.update_camera(&mut self.camera, dt);
-        self.camera_uniform.update_view_proj(&self.camera, &self.projection);
-        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
+        self.camera_uniform
+            .update_view_proj(&self.camera, &self.projection);
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -395,10 +422,12 @@ pub async fn run() {
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::DeviceEvent {
-            event: DeviceEvent::MouseMotion { delta, },
-            .. 
-        } => if state.mouse_pressed {
-            state.camera_controller.process_mouse(delta.0, delta.1)
+            event: DeviceEvent::MouseMotion { delta },
+            ..
+        } => {
+            if state.mouse_pressed {
+                state.camera_controller.process_mouse(delta.0, delta.1)
+            }
         }
         Event::WindowEvent {
             window_id,

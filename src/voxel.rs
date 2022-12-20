@@ -1,4 +1,8 @@
-use cgmath::Vector3;
+#[derive(Debug, Clone, Copy)]
+pub enum BlockType {
+    Empty,
+    Grass,
+}
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
@@ -28,14 +32,56 @@ impl Vertex {
     }
 }
 
-const HALF_SIZE: f32 = 0.5;
+pub const SIZE: f32 = 1.0;
+pub const HALF_SIZE: f32 = 0.5;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Voxel {
-    pub corners: [Vertex; 8],
+    pub block_type: BlockType,
 }
 
 impl Voxel {
+    pub fn new_empty() -> Self {
+        Self {
+            block_type: BlockType::Empty,
+        }
+    }
+
+    pub fn set_block_type(&mut self, block_type: BlockType) {
+        self.block_type = block_type;
+    }
+
+    pub fn get_vertex(x: f32, y: f32, z: f32, i: usize) -> Option<Vertex> {
+        match i {
+            0 => {
+                Some(Vertex { position: [x, y, z], color: [0.3, 0.3, 0.3] })
+            },
+            1 => {
+                Some(Vertex { position: [x + SIZE, y, z], color: [0.3, 0.3, 0.3] })
+            },
+            2 => {
+                Some(Vertex { position: [x + SIZE, y + SIZE, z], color: [0.3, 0.3, 0.3] })
+            },
+            3 => {
+                Some(Vertex { position: [x, y + SIZE, z], color: [0.3, 0.3, 0.3] })
+            },
+            4 => {
+                Some(Vertex { position: [x, y, z + SIZE], color: [0.3, 0.3, 0.3] })
+            },
+            5 => {
+                Some(Vertex { position: [x + SIZE, y, z + SIZE], color: [0.3, 0.3, 0.3] })
+            },
+            6 => {
+                Some(Vertex { position: [x + SIZE, y + SIZE, z + SIZE], color: [0.3, 0.3, 0.3] })
+            },
+            7 => {
+                Some(Vertex { position: [x, y + SIZE, z + SIZE], color: [0.3, 0.3, 0.3] })
+            },
+            _ => None,
+        }
+    }
+
+    /*
     pub fn new(pos: Vector3<f32>) -> Self {
         Self {
             corners: [
@@ -74,6 +120,7 @@ impl Voxel {
             ],
         }
     }
+    */
 
     #[rustfmt::skip]
     pub fn get_index_buffer(&self) -> [u16; 36] {

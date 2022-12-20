@@ -1,6 +1,9 @@
-use cgmath::{Matrix4, Point3, SquareMatrix, Vector3, Rad, InnerSpace, perspective};
-use winit::{event::{ElementState, VirtualKeyCode, MouseScrollDelta}, dpi::PhysicalPosition};
+use cgmath::{perspective, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3};
 use std::{f32::consts::FRAC_PI_2, time::Duration};
+use winit::{
+    dpi::PhysicalPosition,
+    event::{ElementState, MouseScrollDelta, VirtualKeyCode},
+};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
@@ -18,7 +21,11 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new<V: Into<Point3<f32>>, Y: Into<Rad<f32>>, P: Into<Rad<f32>>,>(position: V, yaw: Y, pitch: P) -> Self {
+    pub fn new<V: Into<Point3<f32>>, Y: Into<Rad<f32>>, P: Into<Rad<f32>>>(
+        position: V,
+        yaw: Y,
+        pitch: P,
+    ) -> Self {
         Self {
             position: position.into(),
             yaw: yaw.into(),
@@ -30,7 +37,11 @@ impl Camera {
         let (sin_pitch, cos_pitch) = self.pitch.0.sin_cos();
         let (sin_yaw, cos_yaw) = self.yaw.0.sin_cos();
 
-        Matrix4::look_to_rh(self.position, Vector3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize(), Vector3::unit_y())
+        Matrix4::look_to_rh(
+            self.position,
+            Vector3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize(),
+            Vector3::unit_y(),
+        )
     }
 }
 
@@ -113,7 +124,11 @@ impl CameraController {
     }
 
     pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool {
-        let amount = if state == ElementState::Pressed { 1.0 } else { 0.0 };
+        let amount = if state == ElementState::Pressed {
+            1.0
+        } else {
+            0.0
+        };
         match key {
             VirtualKeyCode::W | VirtualKeyCode::Up => {
                 self.amount_forward = amount;
@@ -139,7 +154,7 @@ impl CameraController {
                 self.amount_down = amount;
                 true
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -151,10 +166,7 @@ impl CameraController {
     pub fn process_scroll(&mut self, delta: &MouseScrollDelta) {
         self.scroll = -match delta {
             MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.0,
-            MouseScrollDelta::PixelDelta(PhysicalPosition {
-                y: scroll,
-                ..
-            }) => *scroll as f32,
+            MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => *scroll as f32,
         };
     }
 
@@ -168,7 +180,8 @@ impl CameraController {
         camera.position += right * (self.amount_right - self.amount_left) * self.speed * dt;
 
         let (pitch_sin, pitch_cos) = camera.pitch.0.sin_cos();
-        let scrollward = Vector3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
+        let scrollward =
+            Vector3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
         camera.position += scrollward * self.scroll * self.speed * self.sensitivity * dt;
         self.scroll = 0.0;
 
