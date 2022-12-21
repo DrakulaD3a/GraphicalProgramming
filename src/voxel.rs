@@ -54,28 +54,28 @@ impl Voxel {
     pub fn get_vertex(x: f32, y: f32, z: f32, i: usize) -> Option<Vertex> {
         match i {
             0 => {
-                Some(Vertex { position: [x, y, z], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x, y, z], color: [0.3, 0.2, 0.1] })
             },
             1 => {
-                Some(Vertex { position: [x + SIZE, y, z], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x + SIZE, y, z], color: [0.4, 0.5, 0.6] })
             },
             2 => {
-                Some(Vertex { position: [x + SIZE, y + SIZE, z], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x + SIZE, y + SIZE, z], color: [0.7, 0.7, 0.7] })
             },
             3 => {
-                Some(Vertex { position: [x, y + SIZE, z], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x, y + SIZE, z], color: [0.4, 0.4, 0.4] })
             },
             4 => {
-                Some(Vertex { position: [x, y, z + SIZE], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x, y, z + SIZE], color: [0.1, 0.3, 0.9] })
             },
             5 => {
-                Some(Vertex { position: [x + SIZE, y, z + SIZE], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x + SIZE, y, z + SIZE], color: [0.8, 0.4, 0.5] })
             },
             6 => {
-                Some(Vertex { position: [x + SIZE, y + SIZE, z + SIZE], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x + SIZE, y + SIZE, z + SIZE], color: [0.3, 0.9, 0.3] })
             },
             7 => {
-                Some(Vertex { position: [x, y + SIZE, z + SIZE], color: [0.3, 0.3, 0.3] })
+                Some(Vertex { position: [x, y + SIZE, z + SIZE], color: [0.3, 0.7, 0.1] })
             },
             _ => None,
         }

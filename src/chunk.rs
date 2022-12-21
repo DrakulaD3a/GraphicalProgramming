@@ -1,4 +1,5 @@
 use crate::voxel;
+use crate::quad::{Quad, Direction};
 
 pub const CHUNK_SIZE: usize = 16;
 
@@ -17,11 +18,11 @@ impl Chunk {
         }
     }
 
-    pub fn get_voxel(&self, x: i32, y: i32, z: i32) -> Option<voxel::Voxel> {
+    pub fn get_voxel(&self, x: usize, y: usize, z: usize) -> Option<voxel::Voxel> {
         if !(0..16).contains(&x) && !(0..16).contains(&y) && !(0..16).contains(&z) {
             return None;
         }
-        Some(self.voxels[x as usize][y as usize][z as usize])
+        Some(self.voxels[x][y][z])
     }
 
     pub fn build_voxels(&mut self, world_pos: &cgmath::Vector3<f32>) {
@@ -47,15 +48,39 @@ impl Chunk {
                             self.vertices.push(voxel::Voxel::get_vertex(x as f32, y as f32, z as f32, i).unwrap())
                         }
 
+                        /*
                         self.indices.push(vert_index);
                         self.indices.push(vert_index + 1);
                         self.indices.push(vert_index + 2);
                         self.indices.push(vert_index);
                         self.indices.push(vert_index + 2);
                         self.indices.push(vert_index + 3);
+                        */
+                        self.indices.push(vert_index + 0);self.indices.push(vert_index + 1);self.indices.push(vert_index + 3);
+                        self.indices.push(vert_index + 1);self.indices.push(vert_index + 2);self.indices.push(vert_index + 3);
+                        self.indices.push(vert_index + 4);self.indices.push(vert_index + 0);self.indices.push(vert_index + 7);
+                        self.indices.push(vert_index + 0);self.indices.push(vert_index + 3);self.indices.push(vert_index + 7);
+                        self.indices.push(vert_index + 1);self.indices.push(vert_index + 5);self.indices.push(vert_index + 2);
+                        self.indices.push(vert_index + 5);self.indices.push(vert_index + 6);self.indices.push(vert_index + 2);
+                        self.indices.push(vert_index + 3);self.indices.push(vert_index + 2);self.indices.push(vert_index + 7);
+                        self.indices.push(vert_index + 2);self.indices.push(vert_index + 6);self.indices.push(vert_index + 7);
+                        self.indices.push(vert_index + 4);self.indices.push(vert_index + 5);self.indices.push(vert_index + 0);
+                        self.indices.push(vert_index + 5);self.indices.push(vert_index + 1);self.indices.push(vert_index + 0);
+                        self.indices.push(vert_index + 7);self.indices.push(vert_index + 6);self.indices.push(vert_index + 4);
+                        self.indices.push(vert_index + 6);self.indices.push(vert_index + 5);self.indices.push(vert_index + 4);
                     }
 
-                    vert_index += 4;
+                    vert_index += 8;
+                }
+            }
+        }
+    }
+
+    pub fn create_buffers(&mut self, world_pos: &cgmath::Vector3<f32>) {
+        for x in 0..CHUNK_SIZE {
+            for y in 0..CHUNK_SIZE {
+                for z in 0..CHUNK_SIZE {
+
                 }
             }
         }

@@ -130,19 +130,19 @@ impl CameraController {
             0.0
         };
         match key {
-            VirtualKeyCode::W | VirtualKeyCode::Up => {
+            VirtualKeyCode::W => {
                 self.amount_forward = amount;
                 true
             }
-            VirtualKeyCode::S | VirtualKeyCode::Down => {
+            VirtualKeyCode::S => {
                 self.amount_backward = amount;
                 true
             }
-            VirtualKeyCode::A | VirtualKeyCode::Left => {
+            VirtualKeyCode::A => {
                 self.amount_left = amount;
                 true
             }
-            VirtualKeyCode::D | VirtualKeyCode::Right => {
+            VirtualKeyCode::D => {
                 self.amount_right = amount;
                 true
             }
@@ -153,6 +153,22 @@ impl CameraController {
             VirtualKeyCode::LShift => {
                 self.amount_down = amount;
                 true
+            }
+            VirtualKeyCode::Up => {
+                self.rotate_vertical = -amount * 3.0;
+                false
+            }
+            VirtualKeyCode::Down => {
+                self.rotate_vertical = amount * 3.0;
+                false
+            }
+            VirtualKeyCode::Left => {
+                self.rotate_horizontal = -amount * 3.0;
+                false
+            }
+            VirtualKeyCode::Right => {
+                self.rotate_horizontal = amount * 3.0;
+                false
             }
             _ => false,
         }
@@ -193,10 +209,10 @@ impl CameraController {
         self.rotate_horizontal = 0.0;
         self.rotate_vertical = 0.0;
 
-        if camera.pitch < -Rad(FRAC_PI_2) {
-            camera.pitch = -Rad(FRAC_PI_2);
-        } else if camera.pitch > Rad(FRAC_PI_2) {
-            camera.pitch = Rad(FRAC_PI_2);
+        if camera.pitch < -Rad(FRAC_PI_2 - 0.0001) {
+            camera.pitch = -Rad(FRAC_PI_2 - 0.0001);
+        } else if camera.pitch > Rad(FRAC_PI_2 - 0.0001) {
+            camera.pitch = Rad(FRAC_PI_2 - 0.0001);
         }
     }
 }

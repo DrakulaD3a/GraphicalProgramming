@@ -13,6 +13,8 @@ mod camera;
 mod chunk;
 mod texture;
 mod voxel;
+mod quad;
+//mod mesh_building;
 
 struct Instance {
     position: cgmath::Vector3<f32>,
@@ -262,7 +264,7 @@ impl State {
         });
 
         let mut chunk = chunk::Chunk::new();
-        chunk.build_voxels(&cgmath::Vector3::new(10.0, 10.0, 10.0));
+        chunk.build_voxels(&cgmath::Vector3::new(-16.0, -16.0, -16.0));
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),

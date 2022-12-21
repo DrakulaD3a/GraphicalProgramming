@@ -33,8 +33,11 @@ fn vs_main(
 		instance.model_matrix_2,
 		instance.model_matrix_3,
 	);
+
+	let world_position = model_matrix * vec4<f32>(in.position, 1.0);
+
 	var out: VertexOutput;
-	out.position = camera.view_proj * model_matrix * vec4<f32>(in.position, 1.0);
+	out.position = camera.view_proj * world_position;
 	out.color = in.color;
 	return out;
 }
