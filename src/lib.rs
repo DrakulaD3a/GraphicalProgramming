@@ -10,11 +10,12 @@ use winit::{
 };
 
 mod camera;
-mod chunk;
 mod texture;
-mod voxel;
-mod quad;
-//mod mesh_building;
+mod light;
+mod render_utilities;
+mod voxel_things;
+use crate::voxel_things::*;
+use crate::voxel_things::vertex_desc::VertexDesc;
 
 struct Instance {
     position: cgmath::Vector3<f32>,
@@ -85,9 +86,6 @@ struct State {
     camera_uniform: camera::CameraUniform,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
-
-    instances: Vec<Instance>,
-    instance_buffer: wgpu::Buffer,
 
     depth_texture: texture::Texture,
 
@@ -180,91 +178,33 @@ impl State {
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&camera_bind_group_layout],
-                push_constant_ranges: &[],
-            });
+        let light = light::Light {
+            position: [50.0, 2.0, 50.0],
+            _padding: 0,
+            color: [1.0, 1.0, 1.0],
+            _padding2: 0,
+        };
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[voxel::Vertex::desc(), InstanceRaw::desc()],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent::REPLACE,
-                        alpha: wgpu::BlendComponent::REPLACE,
-                    }),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: texture::Texture::DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
+        let light_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("light_buffer"),
+            contents: bytemuck::cast_slice(&[light]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let instances = (0..NUM_INSTANCES_PER_ROW)
-            .flat_map(|z| {
-                (0..NUM_INSTANCES_PER_ROW).flat_map(move |y| {
-                    (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                        let position;
-                        if rand::thread_rng().gen_bool(0.5) {
-                            position = cgmath::Vector3 {
-                                x: x as f32,
-                                y: y as f32,
-                                z: z as f32,
-                            };
-                        } else {
-                            position = cgmath::Vector3 {
-                                x: 0.0,
-                                y: 0.0,
-                                z: 0.0,
-                            };
-                        }
+        let light_bind_group_layout = light::create_light_bind_group_layout(&device);
 
-                        Instance { position }
-                    })
-                })
-            })
-            .collect::<Vec<_>>();
-
-        let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: bytemuck::cast_slice(&instance_data),
-            usage: wgpu::BufferUsages::VERTEX,
+        let light_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("light_bind_group"),
+            layout: &light_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: light_buffer.as_entire_binding(),
+            }],
         });
+
+        let render_pipeline = voxel::create_voxel_pipeline(device, config.format, &light_bind_group_layout, shader);
 
         let mut chunk = chunk::Chunk::new();
-        chunk.build_voxels(&cgmath::Vector3::new(-16.0, -16.0, -16.0));
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -293,9 +233,6 @@ impl State {
             camera_uniform,
             camera_buffer,
             camera_bind_group,
-
-            instances,
-            instance_buffer,
 
             depth_texture,
 

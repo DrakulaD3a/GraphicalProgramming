@@ -7,7 +7,8 @@ var<uniform> camera: CameraUniform;
 
 struct VertexInput {
 	@location(0) position: vec3<f32>,
-	@location(1) color: vec3<f32>,
+	@location(1) normal: vec3<f32>,
+	@location(2) color: vec3<f32>,
 }
 
 struct InstanceInput {
@@ -18,8 +19,10 @@ struct InstanceInput {
 }
 
 struct VertexOutput {
-	@builtin(position) position: vec4<f32>,
-	@location(1) color: vec3<f32>,
+	@builtin(position) builtin_position: vec4<f32>,
+	@location(1) normal: vec3<f32>,
+	@location(2) color: vec3<f32>,
+	@location(3) position: vec3<f32>,
 }
 
 @vertex 
@@ -34,11 +37,13 @@ fn vs_main(
 		instance.model_matrix_3,
 	);
 
-	let world_position = model_matrix * vec4<f32>(in.position, 1.0);
+	let model_space = model_matrix * vec4<f32>(in.position, 1.0);
 
 	var out: VertexOutput;
-	out.position = camera.view_proj * world_position;
+	out.position = model_space.xyz;
+	out.builtin_position = camera.view_proj * model_space;
 	out.color = in.color;
+	out.normal = in.normal;
 	return out;
 }
 
